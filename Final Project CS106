@@ -1,0 +1,123 @@
+from matplotlib import pyplot
+from simpleimage import SimpleImage
+import os
+import csv 
+"""
+this program ask user to select valid date range, machine a data type for the plot
+"""
+def main():
+    #this prints a welcome statement
+    print_welcome()
+    current = "start"
+    start_date = 0
+    #asking the user for a starting date of his selection
+    start_date = get_valid_date(current, start_date)
+    #now user shall enter the end data
+    current = "end"
+    end_date = get_valid_date(current, start_date)
+    #if the user chooses range 31 - 31, plot can not be done, but the program won't bother him and selects wider range
+    if start_date == 31:
+        print("hmmm... I think you wanted to start your analysis with day 30... But don't worry, I'll change the start day for you..")
+        start_date = 30
+    print("")
+    print("Ok, good, I will analyse the date range between day " + str(start_date) + " and day " + str(end_date) + " of the month.")
+    #User needs to tell which machine and what type of data are to be shown
+    machine = get_machine_choice()
+    choice = get_type_choice()
+    print("")
+    print("Ok, here is your " + str(choice) + " graph from day " + str(start_date) + " until day " + str(end_date) + ":")
+    print("")
+    #this function will create the plot
+    get_plot(choice, machine, start_date, end_date)
+    
+
+    #function get_plot takes user input and creates the axes, labels and shows the plot
+def get_plot(choice, machine, start_date, end_date):
+    x = get_data_x(start_date, end_date)
+    y = get_data_y(choice, machine, start_date, end_date)
+    pyplot.plot(x, y)
+    pyplot.xlabel("day")
+    pyplot.ylabel("number of parts")
+    pyplot.title(str(choice) + " between day " + str(start_date) + " and day " + str(end_date) + " for " + str(machine))
+    show_plot()
+
+    #this function takes selected data range for the X axis
+def get_data_x(start_date, end_date):
+    data = [int(start_date)]
+    while start_date < end_date:
+        start_date += 1
+        data.append(start_date)
+    return data
+
+    #this function gathers production, or quality data from the correct .csv file (cutter, or laminator machine)
+def get_data_y(choice, machine, start_date, end_date):
+    filename = open(str(machine) +".csv")
+    next(filename)
+    data = []
+    for line in filename:
+        parts = line.split(",")
+        production = parts[0]
+        quality = parts[1]
+        if choice == "production":
+            data.append(int(production))
+        else:
+            data.append(int(quality))
+    relevant_data = []
+    relevant_data.append(data[start_date - 1])
+    data_range = int(end_date) - int(start_date) + 1
+    for i in range(data_range - 1):
+        relevant_data.append(data[start_date + i])
+    return relevant_data
+
+    #a workaround as ed can't show the plot directly
+def show_plot():
+    pyplot.savefig('temp.png')
+    img = SimpleImage('temp.png')
+    os.remove('temp.png')
+    img.show()
+
+    #this function allows user to select only valid machine
+def get_machine_choice():
+    machine = input("Are you interested in data from cutter, or laminator? ")
+    while str(machine) != "cutter" and str(machine) != "laminator":
+        print("Invalid input")
+        machine = input("Please type cutter, or laminator: ")
+    return machine
+
+    #this function allows user to select only valid data type
+def get_type_choice():
+    choice = input("Are you interested in production or quality data? ")
+    while str(choice) != "production" and str(choice) != "quality":
+        print("Invalid input")
+        choice = input("Please type production, or quality: ")
+    return choice
+
+
+    #this function assures that the user enters correct data range between 1 and 31
+    #if user enters not a number, the program asks him to enter number only
+    #if user makes a wrong selection (for example end data earlier than start date), the funtion not only ask again, but informs the user about possible options
+def get_valid_date(current, start_date):
+    start_date += 1
+    if start_date == 32:
+        start_date = 31
+    while True:
+        try:
+            date = int(input("Enter " + str(current) + " date: "))
+            if date >= start_date and date <= 31:
+                return date
+            else:
+                print("Please enter a number between " + str(start_date) + " and 31")
+                print("")
+        except ValueError:
+            print("Please enter a number")
+            print("")
+
+    #this function prints the welcome statement.
+def print_welcome():
+    print("Welcome to Machine data Analyser in Python!")
+    print("I have production and quality data from your two machines - cutter and laminator.")
+    print("I will analyse the data for you.")
+    print("")
+
+if __name__ == '__main__':
+    main()
